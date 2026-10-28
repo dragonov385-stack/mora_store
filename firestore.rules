@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // الأدمن (UID حسابك)
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'amUcOg6g56fg8GdwsZPdkrO71PD3';
+    }
+    // العميل: سجّل رقم تليفونه (عنده مستند في users)
+    function isCustomer() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    match /users/{uid} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'phone', 'last'])
+        && request.resource.data.uid == uid
+        && request.resource.data.phone.matches('^01[0125][0-9]{8}$');
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /catalog/{id}  { allow read: if isCustomer() || isAdmin(); allow write: if isAdmin(); }
+    match /settings/{id} { allow read: if isCustomer() || isAdmin(); allow write: if isAdmin(); }
+
+    match /orders/{id} {
+      allow create: if isCustomer()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.phone == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone
+        && request.resource.data.status == 'pending'
+        && request.resource.data.receipt.size() < 700000;
+      allow read: if isAdmin() || (isCustomer() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+  }
+}

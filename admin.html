@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><title>لوحة التحكم – MORA</title><meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>body{background:#020617;margin:0;font-family:Tahoma,Arial,sans-serif}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const {useState,useEffect}=React;
+const cfg=window.firebaseConfig;
+const configured=!cfg.apiKey.startsWith("PASTE");
+let auth,db;
+if(configured){firebase.initializeApp(cfg);auth=firebase.auth();db=firebase.firestore();}
+const card="bg-slate-900/50 border border-red-500/20 rounded-3xl p-5 space-y-4";
+const inp="w-full bg-slate-950/60 border border-white/10 focus:border-red-500 rounded-xl px-3 py-2.5 text-white placeholder-slate-600 outline-none";
+const btn="bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white px-4 py-2.5 rounded-xl font-bold text-sm";
+const uid4=()=>Math.random().toString(36).slice(2,8);
+const fail=e=>alert("خطأ: "+(e.code||e.message));
+const NoCfg=()=><div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6"><div className={card+" max-w-md"}><h3 className="font-bold">⚙️ محتاج إعدادات Firebase</h3><p className="text-sm text-slate-300">افتح firebase-config.js والصق الإعدادات.</p></div></div>;
+const SEED=[{"name": "Free Fire", "tagline": "فودافون كاش & المحافظ الرقمية", "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=600", "badge": "الأكثر طلباً 🔥", "packages": [{"id": "ff0", "name": "100 + 10 جوهرة", "price": 85, "icon": "💎"}, {"id": "ff1", "name": "210 + 21 جوهرة", "price": 170, "icon": "💎"}, {"id": "ff2", "name": "530 + 53 جوهرة", "price": 415, "icon": "💎"}, {"id": "ff3", "name": "1080 + 108 جوهرة", "price": 830, "icon": "💎"}, {"id": "ff4", "name": "العضوية الأسبوعية", "price": 150, "icon": "👑"}, {"id": "ff5", "name": "العضوية الشهرية", "price": 650, "icon": "👑"}]}, {"name": "PUBG Mobile", "tagline": "شحن سريع عن طريق الـ ID", "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&q=80&w=600", "badge": "سريع ⚡", "packages": [{"id": "pu0", "name": "60 UC", "price": 65, "icon": "🪙"}, {"id": "pu1", "name": "325 UC", "price": 325, "icon": "🪙"}, {"id": "pu2", "name": "660 UC", "price": 645, "icon": "🪙"}, {"id": "pu3", "name": "1800 UC", "price": 1750, "icon": "🪙"}]}, {"name": "Mobile Legends", "tagline": "شحن ماسات", "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=600", "badge": "خصم خاص 🎁", "packages": [{"id": "ml0", "name": "86 Diamond", "price": 95, "icon": "💎"}, {"id": "ml1", "name": "172 Diamond", "price": 190, "icon": "💎"}, {"id": "ml2", "name": "257 Diamond", "price": 280, "icon": "💎"}, {"id": "ml3", "name": "706 Diamond", "price": 770, "icon": "💎"}]}, {"name": "Roblox", "tagline": "روبوكس سريع وآمن", "image": "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&q=80&w=600", "badge": "جديد ✨", "packages": [{"id": "rb0", "name": "400 Robux", "price": 240, "icon": "🟩"}, {"id": "rb1", "name": "800 Robux", "price": 470, "icon": "🟩"}, {"id": "rb2", "name": "1700 Robux", "price": 980, "icon": "🟩"}]}];
+const SEED_WALLETS=[{"id": "vodafone", "name": "فودافون كاش", "number": "01017576934"}, {"id": "orange", "name": "أورنج كاش", "number": "01017576934"}, {"id": "etisalat", "name": "اتصالات كاش", "number": "01017576934"}, {"id": "we", "name": "WE Pay", "number": "01017576934"}];
+
+function compress(file,max){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.78));};img.onerror=rej;img.src=URL.createObjectURL(file);});}
+function Field({value,onSave,type='text',cls='',ph=''}){
+  const [v,setV]=useState(value);
+  useEffect(()=>setV(value),[value]);
+  return <input type={type} placeholder={ph} className={inp+' '+cls} value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(String(v)!==String(value))onSave(type==='number'?Number(v)||0:v)}}/>;
+}
+function Login(){
+  const [e,setE]=useState(''),[p,setP]=useState('');
+  const go=()=>auth.signInWithEmailAndPassword(e,p).catch(fail);
+  return <div className="min-h-screen flex items-center justify-center p-4"><div className={card+' w-full max-w-sm'}><h3 className="font-bold text-lg text-center">🔐 دخول الأدمن</h3>
+    <input className={inp} type="email" placeholder="الإيميل" value={e} onChange={x=>setE(x.target.value)}/>
+    <input className={inp} type="password" placeholder="كلمة السر" value={p} onChange={x=>setP(x.target.value)} onKeyDown={x=>x.key==='Enter'&&go()}/>
+    <button className={btn+' w-full'} onClick={go}>دخول</button></div></div>;
+}
+
+function Panel({user}){
+  const [t,setT]=useState('orders'),[ng,setNg]=useState('');
+  const [catalog,setCatalog]=useState([]),[wallets,setWallets]=useState([]),[orders,setOrders]=useState([]),[users,setUsers]=useState([]);
+  useEffect(()=>{const u=[
+    db.collection('catalog').onSnapshot(s=>setCatalog(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0))),fail),
+    db.doc('settings/main').onSnapshot(s=>setWallets((s.exists&&s.data().wallets)||[]),fail),
+    db.collection('users').onSnapshot(s=>setUsers(s.docs.map(d=>d.data()).sort((x,y)=>(y.last||0)-(x.last||0))),console.error),
+    db.collection('orders').onSnapshot(s=>setOrders(s.docs.map(d=>d.data())),e=>alert('هذا الحساب ليس أدمن (راجع UID في القواعد)'))];
+    return()=>u.forEach(f=>f());},[]);
+  const saveGame=(g,patch)=>db.collection('catalog').doc(g.id).update(patch).catch(fail);
+  const saveWallets=w=>db.doc('settings/main').set({wallets:w}).catch(fail);
+  const setStatus=(o,s)=>db.collection('orders').doc(o.id).update({status:s}).catch(fail);
+  const seed=async()=>{try{for(const [i,g] of SEED.entries())await db.collection('catalog').add({...g,order:i,packages:g.packages.map(p=>({...p,id:uid4()}))});await saveWallets(SEED_WALLETS);}catch(e){fail(e)}};
+  const upImg=async(g,f)=>{if(!f)return;try{const r=await compress(f,640);if(r.length>700000)return alert('الصورة كبيرة، اختار صورة أصغر');await saveGame(g,{image:r})}catch(e){alert('تعذّر قراءة الصورة')}};
+  const pend=orders.filter(o=>o.status==='pending').length;
+  return <div className="max-w-4xl mx-auto px-4 py-6 space-y-5 text-slate-100">
+    <div className="flex items-center justify-between"><h1 className="text-xl font-black text-red-400">🔐 لوحة تحكم MORA</h1><button className="text-xs text-slate-400 underline" onClick={()=>auth.signOut()}>خروج</button></div>
+    <div className="flex gap-2 flex-wrap">
+      {[['orders','الطلبات ('+pend+')'],['products','المنتجات والأسعار'],['wallets','طرق الشحن والأرقام'],['customers','العملاء ('+users.length+')']].map(([k,l])=><button key={k} onClick={()=>setT(k)} className={`px-4 py-2 rounded-full text-sm font-bold ${t===k?'bg-red-600':'bg-slate-900 text-slate-400'}`}>{l}</button>)}</div>
+    {catalog.length===0&&<div className={card}><p className="text-sm text-slate-300">لا توجد بيانات بعد.</p><button className={btn} onClick={seed}>تحميل البيانات الافتراضية</button></div>}
+
+    {t==='orders'&&<div className="space-y-3">{orders.length===0&&<p className="text-slate-500 text-center py-8">لا توجد طلبات.</p>}
+      {[...orders].sort((a,b)=>b.ts-a.ts).map(o=><div key={o.id} className={card}>
+        <div className="flex justify-between flex-wrap gap-2"><div><div className="font-mono text-xs text-red-400">{o.id}</div><div className="font-bold">{o.game} – {o.pkg}</div>
+          <div className="text-xs text-slate-400">ID: <span className="font-mono text-slate-200">{o.pid}</span> · {o.wallet} · من: {o.cphone}</div><div className="text-xs text-slate-300 mt-1">📞 رقم العميل: <span className="font-mono select-all">{o.phone||'—'}</span></div></div>
+          <div><div className="text-xl font-black text-red-400">{o.price} ج.م</div>
+          <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${o.status==='approved'?'bg-emerald-500/20 text-emerald-400':o.status==='rejected'?'bg-rose-500/20 text-rose-400':'bg-yellow-500/20 text-yellow-400'}`}>{{pending:'قيد المراجعة',approved:'تم القبول',rejected:'مرفوض'}[o.status]}</span></div></div>
+        {o.receipt&&<a href={o.receipt} target="_blank" rel="noopener noreferrer"><img src={o.receipt} className="max-h-56 rounded-xl border border-white/10"/></a>}
+        {o.status==='pending'&&<div className="flex gap-2"><button className={btn} onClick={()=>setStatus(o,'approved')}>✅ قبول وشحن</button><button className="bg-slate-800 text-rose-300 px-4 py-2.5 rounded-xl font-bold text-sm" onClick={()=>setStatus(o,'rejected')}>رفض</button></div>}
+      </div>)}</div>}
+
+    {t==='products'&&<div className="space-y-4">
+      {catalog.map(g=>{const up=(i,k)=>v=>saveGame(g,{packages:g.packages.map((x,j)=>j===i?{...x,[k]:v}:x)});return <div key={g.id} className={card}>
+        <div className="flex gap-2"><Field value={g.name} onSave={v=>saveGame(g,{name:v})}/><Field value={g.badge||''} onSave={v=>saveGame(g,{badge:v})} cls="max-w-[9rem]"/>
+          <button className="bg-slate-800 text-rose-300 px-3 rounded-xl" onClick={()=>confirm('حذف اللعبة؟')&&db.collection('catalog').doc(g.id).delete().catch(fail)}>🗑</button></div>
+        <Field ph="الوصف تحت الاسم" value={g.tagline||''} onSave={v=>saveGame(g,{tagline:v})}/>
+        <div className="flex items-center gap-3"><div className="w-28 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-red-800 to-slate-800 flex items-center justify-center text-2xl">{g.image?<img src={g.image} className="w-full h-full object-cover"/>:'🎮'}</div>
+          <label className={btn+' cursor-pointer'}>📷 رفع صورة<input type="file" accept="image/*" className="hidden" onChange={e=>{upImg(g,e.target.files[0]);e.target.value=''}}/></label>
+          {g.image&&<button className="text-xs text-rose-400" onClick={()=>saveGame(g,{image:''})}>حذف الصورة</button>}</div>
+        {g.packages.map((p,i)=><div key={p.id} className="flex gap-2 items-center">
+          <Field value={p.icon} onSave={up(i,'icon')} cls="max-w-[3.5rem] text-center"/><Field value={p.name} onSave={up(i,'name')}/>
+          <Field type="number" value={p.price} onSave={up(i,'price')} cls="max-w-[6rem] font-mono"/>
+          <button className="text-rose-400 px-2" onClick={()=>saveGame(g,{packages:g.packages.filter((_,j)=>j!==i)})}>✕</button></div>)}
+        <button className="text-sm text-red-400 font-bold" onClick={()=>saveGame(g,{packages:[...g.packages,{id:uid4(),name:'باقة جديدة',price:0,icon:'💎'}]})}>+ إضافة باقة</button></div>})}
+      <div className={card+' flex gap-2'}><input className={inp} placeholder="اسم لعبة جديدة (مثال: PUBG Mobile)" value={ng} onChange={e=>setNg(e.target.value)}/>
+        <button className={btn} disabled={!ng.trim()} onClick={()=>{db.collection('catalog').add({name:ng.trim(),badge:'جديد ✨',order:Date.now(),packages:[]}).catch(fail);setNg('');}}>إضافة</button></div>
+    </div>}
+
+    {t==='customers'&&<div className="space-y-2">{users.length===0&&<p className="text-slate-500 text-center py-8">لا يوجد عملاء بعد.</p>}
+      {users.map(x=><div key={x.uid} className={card+' flex justify-between items-center'}><div><div className="font-mono font-bold text-lg select-all" dir="ltr">{x.phone}</div>
+        <div className="text-[11px] text-slate-400">آخر دخول: {x.last?new Date(x.last).toLocaleString('ar-EG'):'—'}</div></div>
+        <div className="text-xs text-slate-300">{orders.filter(o=>o.uid===x.uid).length} طلب</div></div>)}</div>}
+
+    {t==='wallets'&&<div className="space-y-3">
+      {wallets.map((w,i)=><div key={w.id} className={card+' flex gap-2 items-center'}>
+        <Field value={w.name} onSave={v=>saveWallets(wallets.map((x,j)=>j===i?{...x,name:v}:x))}/>
+        <Field value={w.number} onSave={v=>saveWallets(wallets.map((x,j)=>j===i?{...x,number:v}:x))} cls="font-mono"/>
+        <button className="text-rose-400 px-2" onClick={()=>saveWallets(wallets.filter((_,j)=>j!==i))}>✕</button></div>)}
+      <button className={btn} onClick={()=>saveWallets([...wallets,{id:uid4(),name:'طريقة جديدة',number:'01XXXXXXXXX'}])}>+ إضافة طريقة شحن</button></div>}
+  </div>;
+}
+
+function App(){
+  const [user,setUser]=useState(undefined);
+  useEffect(()=>{if(!configured)return;return auth.onAuthStateChanged(u=>setUser(u&&!u.isAnonymous&&(u.providerData||[]).some(p=>p.providerId==='password')?u:null));},[]);
+  if(!configured)return <NoCfg/>;
+  if(user===undefined)return <p className="text-center text-slate-500 py-16">جاري التحميل...</p>;
+  return <div className="min-h-screen bg-slate-950">{user?<Panel user={user}/>:<Login/>}</div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

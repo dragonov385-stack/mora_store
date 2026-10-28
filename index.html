@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><title>MORA STORE</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>body{background:#020617;margin:0;font-family:Tahoma,Arial,sans-serif}
+@keyframes pop{0%{opacity:0;transform:scale(.6) translateY(20px)}60%{transform:scale(1.08)}100%{opacity:1;transform:none}}
+@keyframes out{to{opacity:0;visibility:hidden}}
+@keyframes bar{from{width:0}to{width:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes shine{to{background-position:200% center}}
+.splash{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 50% 40%,#450a0a,#020617 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:out .6s 2.3s forwards}
+.brand{font-weight:900;letter-spacing:.06em;background:linear-gradient(90deg,#ef4444,#fb7185,#fff,#fb7185,#ef4444);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 3s linear infinite}
+.splash .brand{font-size:clamp(44px,13vw,96px);animation:pop 1s both,shine 3s linear infinite;filter:drop-shadow(0 0 25px rgba(239,68,68,.6))}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const {useState,useEffect}=React;
+const cfg=window.firebaseConfig;
+const configured=!cfg.apiKey.startsWith("PASTE");
+let auth,db;
+if(configured){firebase.initializeApp(cfg);auth=firebase.auth();db=firebase.firestore();}
+const card="bg-slate-900/50 border border-red-500/20 rounded-3xl p-5 space-y-4";
+const inp="w-full bg-slate-950/60 border border-white/10 focus:border-red-500 rounded-xl px-3 py-2.5 text-white placeholder-slate-600 outline-none";
+const btn="bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white px-4 py-2.5 rounded-xl font-bold text-sm";
+const uid4=()=>Math.random().toString(36).slice(2,8);
+const fail=e=>alert("خطأ: "+(e.code||e.message));
+const NoCfg=()=><div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6"><div className={card+" max-w-md"}><h3 className="font-bold">⚙️ محتاج إعدادات Firebase</h3><p className="text-sm text-slate-300">افتح firebase-config.js والصق الإعدادات.</p></div></div>;
+function compress(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{try{const k=Math.min(1,900/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*k));c.height=Math.max(1,Math.round(img.height*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',0.7));}catch(e){rej(new Error('bad-image'))}};img.onerror=()=>rej(new Error('bad-image'));img.src=url;});}
+function Splash(){const [gone,setGone]=useState(false);useEffect(()=>{const t=setTimeout(()=>setGone(true),2950);return()=>clearTimeout(t)},[]);if(gone)return null;
+  return <div className="splash"><div style={{fontSize:64,animation:'float 2s infinite'}}>🔥</div><div className="brand">MORA STORE</div>
+    <div className="text-sm tracking-widest text-rose-300" style={{marginTop:8,animation:'pop 1s .5s both'}}>شحن الألعاب · فوري · آمن</div>
+    <div className="mt-8 w-48 h-1 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-red-600 to-rose-400" style={{animation:'bar 2.2s ease-out forwards'}}/></div></div>;}
+
+function Hero(){return <div className="relative rounded-3xl overflow-hidden border border-red-500/30 bg-gradient-to-r from-slate-900/90 via-red-950/30 to-slate-900/90 p-8 md:p-12 shadow-2xl shadow-red-950/40">
+  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+  <div className="max-w-2xl space-y-4">
+    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">⚡ شحن سريع وبدون تعقيد</span>
+    <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight">اشحن جواهر وشدات ألعابك بأسرع سرعة في مصر 🔥</h2>
+    <p className="text-slate-300 text-sm md:text-base leading-relaxed">منصة <span className="text-red-400 font-bold">MORA STORE</span> بتوفر لك الشحن عن طريق التحويل من محافظك (فودافون كاش، أورنج كاش، اتصالات كاش، WE Pay): اختار اللعبة، حوّل المبلغ، وارفع صورة الإيصال وهنراجع طلبك ونشحن حسابك.</p>
+  </div></div>;}
+
+function Step({n,t}){return <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-red-600/20 border border-red-500/40 flex items-center justify-center font-bold text-red-400 text-sm">{n}</div><h4 className="font-bold text-white text-lg">{t}</h4></div>}
+const gcard="bg-slate-900/40 backdrop-blur-2xl border border-red-500/20 rounded-3xl p-6 shadow-xl space-y-4";
+const ginp="w-full bg-slate-950/60 border border-white/10 focus:border-red-500 rounded-2xl px-4 py-3 text-white placeholder-slate-600 outline-none font-mono";
+
+function Store({uid,phone,catalog,wallets,onDone}){
+  const [g,setG]=useState(null),[pkg,setPkg]=useState(null),[pid,setPid]=useState(''),[idOk,setIdOk]=useState(false),[chk,setChk]=useState(false);
+  const [wid,setWid]=useState(null),[cphone,setCphone]=useState(''),[file,setFile]=useState(null),[busy,setBusy]=useState(false),[done,setDone]=useState(null),[err,setErr]=useState('');
+  const game=catalog.find(x=>x.id===g)||catalog[0];
+  const w=wallets.find(x=>x.id===wid)||wallets[0];
+  const verify=()=>{if(pid.length<5)return;setChk(true);setTimeout(()=>{setChk(false);setIdOk(true)},500)};
+  const send=async()=>{
+    setBusy(true);setErr('');
+    try{
+      const receipt=await compress(file);
+      const id='MORA-'+Date.now().toString(36).toUpperCase();
+      await db.collection('orders').doc(id).set({id,uid,phone,game:game.name,pkg:pkg.name,price:pkg.price,pid,wallet:w.name,cphone,receipt,status:'pending',ts:Date.now()});
+      setDone(id);setPkg(null);setFile(null);setPid('');setIdOk(false);
+    }catch(e){setErr(e.message==='bad-image'?'الصورة دي مش مدعومة. اختار صورة JPG أو PNG أو خد سكرين شوت للإيصال.':e.code==='permission-denied'?'السيرفر رفض الطلب (القواعد). اتأكد إن قواعد Firestore اتنشرت وإنك مسجل برقمك.':'تعذّر الإرسال: '+(e.code||e.message))}
+    setBusy(false);
+  };
+  const missing=[!pkg&&'اختار الباقة',!idOk&&'اكتب الـ ID واضغط "تحقق"',!w&&'اختار طريقة الدفع',!cphone&&'اكتب رقم المحفظة اللي حوّلت منها',!file&&'ارفع صورة الإيصال'].filter(Boolean);
+  if(!game)return <p className="text-center text-slate-500 py-12">لا توجد ألعاب بعد.</p>;
+  return <div id="shop" className="space-y-10">
+    <section className="space-y-4"><h3 className="text-xl font-bold text-white">🎮 اختر اللعبة للشحن</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{catalog.map(x=><div key={x.id} onClick={()=>{setG(x.id);setPkg(null);setIdOk(false);setPid('')}}
+        className={`group cursor-pointer rounded-3xl p-3 backdrop-blur-xl border transition-all duration-300 ${game.id===x.id?'bg-red-950/40 border-red-500 shadow-xl shadow-red-600/20 ring-2 ring-red-500/50 scale-[1.02]':'bg-slate-900/40 border-white/10 hover:border-red-500/40'}`}>
+        <div className="aspect-video rounded-2xl overflow-hidden mb-3 relative bg-gradient-to-br from-red-800 to-slate-800 flex items-center justify-center text-3xl">🎮
+          {x.image&&<img src={x.image} alt={x.name} onError={e=>e.target.style.display='none'} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>}
+          <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400 border border-red-500/30">{x.badge}</div></div>
+        <h4 className="font-bold text-white text-base text-center">{x.name}</h4><p className="text-[11px] text-slate-400 text-center mt-1">{x.tagline}</p></div>)}</div></section>
+
+    <div className="grid md:grid-cols-3 gap-8 pt-4">
+      <div className="md:col-span-2 space-y-6">
+        <div className={gcard}><Step n="1" t="معرّف اللاعب (Player ID / UID)"/>
+          <div className="flex gap-3"><input className={ginp+' flex-1'} placeholder="أدخل الـ ID الخاص بك هنا..." value={pid} onChange={e=>{setPid(e.target.value);setIdOk(false)}}/>
+            <button onClick={verify} disabled={chk||pid.length<5} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-6 py-3 rounded-2xl font-bold">{chk?<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>:'تحقق'}</button></div>
+          {idOk&&<div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-2xl text-xs font-bold">✅ تم تسجيل الـ ID: {pid} — راجعه كويس قبل الإرسال</div>}</div>
+        <div className={gcard}><Step n="2" t="اختر الكمية المطلوبة"/>
+          <div className="grid grid-cols-2 gap-3">{game.packages.map(p=><div key={p.id} onClick={()=>setPkg(p)} className={`cursor-pointer p-4 rounded-2xl border backdrop-blur-md transition-all flex justify-between items-center ${pkg?.id===p.id?'bg-gradient-to-r from-red-600/30 to-rose-600/30 border-red-500 shadow-lg shadow-red-600/20 scale-[1.01]':'bg-slate-950/40 border-white/10 hover:border-red-500/30'}`}>
+            <div><div className="text-xl mb-1">{p.icon}</div><div className="font-bold text-white text-sm">{p.name}</div></div>
+            <div><span className="text-base font-black text-red-400">{p.price}</span><span className="text-[10px] text-slate-400 block">ج.م</span></div></div>)}</div></div>
+      </div>
+      <div className={gcard+' h-fit md:sticky md:top-28'}><Step n="3" t="الدفع بالتحويل"/>
+        <div className="space-y-3"><label className="text-xs text-slate-400 block font-medium">اختر المحفظة الإلكترونية:</label>
+          <div className="grid grid-cols-2 gap-2">{wallets.map(x=><button key={x.id} onClick={()=>setWid(x.id)} className={`p-3 rounded-2xl border text-xs font-bold transition-all ${w?.id===x.id?'bg-red-600/20 border-red-500 text-white shadow-md shadow-red-600/20':'bg-slate-950/40 border-white/10 text-slate-400'}`}>{x.name}</button>)}</div></div>
+        <div className="bg-red-950/30 border border-red-500/20 rounded-2xl p-4 text-xs space-y-2">
+          <div className="flex justify-between text-slate-300"><span>حوّل على رقم:</span><span className="font-mono font-bold text-yellow-400 select-all">{w?w.number:'—'}</span></div>
+          <div className="flex justify-between text-slate-300"><span>إجمالي التكلفة:</span><span className="font-bold text-red-400 text-sm">{pkg?pkg.price:0} ج.م</span></div></div>
+        <div className="space-y-2"><label className="text-xs text-slate-400 block font-medium">رقم المحفظة التي حوّلت منها:</label><input type="tel" className={ginp} placeholder="01XXXXXXXXX" value={cphone} onChange={e=>setCphone(e.target.value)}/></div>
+        <div className="space-y-2"><label className="text-xs text-slate-400 block font-medium">صورة إيصال التحويل:</label>
+          <label className="flex items-center justify-center gap-2 cursor-pointer bg-slate-950/60 border border-dashed border-red-500/40 hover:border-red-500 rounded-2xl px-4 py-3 text-sm font-bold text-red-300">📎 {file?'تغيير الصورة':'اختر صورة الإيصال'}<input type="file" accept="image/*" className="hidden" onChange={e=>{setFile(e.target.files[0]||null);setErr('')}}/></label>
+          {file&&<p className="text-[11px] text-emerald-400 truncate">✅ {file.name}</p>}</div>
+        {file&&<img src={URL.createObjectURL(file)} className="max-h-40 rounded-xl"/>}
+        <button onClick={send} disabled={busy||!pkg||!idOk||!cphone||!file||!w} className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-40 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-red-600/40">{busy?'جاري الإرسال...':'💳 تأكيد وإرسال الطلب'}</button>
+        {missing.length>0&&<p className="text-[11px] text-amber-300 text-center">ناقص: {missing.join(' · ')}</p>}
+        {err&&<p className="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-center">{err}</p>}</div>
+    </div>
+    {done&&<div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"><div className="bg-slate-900/95 border border-red-500/40 rounded-3xl p-6 max-w-sm w-full text-center space-y-4">
+      <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-3xl text-emerald-400">✓</div>
+      <h4 className="font-bold text-white text-xl">تم استلام طلبك!</h4><p className="text-xs text-slate-300">رقم الطلب <span className="font-mono text-red-400">{done}</span> — هنراجع الإيصال ونشحن حسابك، وتقدر تتابع الحالة من "طلباتي".</p>
+      <button onClick={()=>{setDone(null);onDone()}} className="w-full bg-red-600 hover:bg-red-500 text-white py-3 rounded-2xl font-bold text-xs">عرض طلباتي</button></div></div>}
+  </div>;
+}
+
+const okU=u=>!!u&&(u.isAnonymous||(u.providerData||[]).some(p=>p.providerId==='google.com'));
+function PhoneGate({user}){
+  const [ph,setPh]=useState(''),[busy,setBusy]=useState(false);
+  const valid=/^01[0125][0-9]{8}$/.test(ph);
+  const isG=!!user&&!user.isAnonymous;
+  const go=async()=>{
+    if(!valid)return;setBusy(true);
+    try{
+      let u=auth.currentUser;
+      if(!u||!okU(u)){const c=await auth.signInAnonymously();u=(c&&c.user)||auth.currentUser;}
+      await db.collection('users').doc(u.uid).set({uid:u.uid,phone:ph,last:Date.now()});
+    }catch(e){alert(e.code==='auth/operation-not-allowed'||e.code==='auth/admin-restricted-operation'?'فعّل Anonymous من Authentication في Firebase':'تعذّر التسجيل: '+(e.code||e.message))}
+    setBusy(false);
+  };
+  const google=async()=>{
+    const p=new firebase.auth.GoogleAuthProvider();setBusy(true);
+    try{await auth.signInWithPopup(p)}
+    catch(e){
+      if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){try{await auth.signInWithRedirect(p);return}catch(x){alert('تعذّر الدخول بجوجل: '+(x.code||x.message))}}
+      else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')alert(e.code==='auth/unauthorized-domain'?'ضيف دومين موقعك في Authorized domains':'تعذّر الدخول بجوجل: '+(e.code||e.message));
+    }
+    setBusy(false);
+  };
+  return <div className="max-w-md mx-auto my-10 bg-slate-900/50 backdrop-blur-2xl border border-red-500/30 p-8 rounded-3xl shadow-2xl space-y-6">
+    <div className="text-center space-y-2"><div className="w-16 h-16 bg-red-600/20 border border-red-500/40 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl">📱</div>
+      <h3 className="text-2xl font-bold text-white">{isG?'كمّل تسجيلك':'أهلاً بيك في Mora Store'}</h3>
+      <p className="text-xs text-slate-400">{isG?`أهلاً ${user.displayName||''}، اكتب رقم تليفونك عشان نكمل`:'اكتب رقم تليفونك عشان تبدأ'}</p></div>
+    <input type="tel" inputMode="numeric" maxLength={11} dir="ltr" className={ginp+' text-center text-xl tracking-widest'} placeholder="01XXXXXXXXX" value={ph} onChange={e=>setPh(e.target.value.replace(/\D/g,''))} onKeyDown={e=>e.key==='Enter'&&go()}/>
+    {ph.length>0&&!valid&&<p className="text-[11px] text-rose-300 text-center">اكتب رقم مصري صحيح (11 رقم يبدأ بـ 010 أو 011 أو 012 أو 015)</p>}
+    <button disabled={!valid||busy} onClick={go} className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-40 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-red-600/30">{busy?'جاري الدخول...':isG?'حفظ ومتابعة':'دخول'}</button>
+    {!isG&&<><div className="relative text-center"><div className="absolute top-1/2 left-0 w-full h-px bg-white/10"></div><span className="relative bg-slate-900 px-3 text-xs text-slate-500">أو</span></div>
+    <button disabled={busy} onClick={google} className="w-full bg-white text-slate-900 font-bold py-3.5 rounded-2xl disabled:opacity-50">الدخول بحساب Google</button>
+    <p className="text-[10px] text-slate-500 text-center">بحساب جوجل طلباتك بتفضل محفوظة على أي جهاز</p></>}
+  </div>;
+}
+
+function App(){
+  const [user,setUser]=useState(undefined),[profile,setProfile]=useState(undefined),[tab,setTab]=useState('home');
+  const [catalog,setCatalog]=useState([]),[wallets,setWallets]=useState([]),[mine,setMine]=useState([]);
+  useEffect(()=>{if(!configured)return;return auth.onAuthStateChanged(u=>setUser(okU(u)?u:null));},[]);
+  useEffect(()=>{setProfile(undefined);if(!user)return;
+    return db.doc('users/'+user.uid).onSnapshot(s=>setProfile(s.exists?s.data():null),()=>setProfile(null));},[user&&user.uid]);
+  useEffect(()=>{if(!user||!profile)return;const u=[];
+    u.push(db.collection('catalog').onSnapshot(s=>setCatalog(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0))),console.error));
+    u.push(db.doc('settings/main').onSnapshot(s=>setWallets((s.exists&&s.data().wallets)||[]),console.error));
+    u.push(db.collection('orders').where('uid','==',user.uid).onSnapshot(s=>setMine(s.docs.map(d=>d.data()).sort((a,b)=>b.ts-a.ts)),console.error));
+    return()=>u.forEach(f=>f());
+  },[user&&user.uid,!!profile]);
+  const nb=(id,l)=><button onClick={()=>setTab(id)} className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${tab===id?'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-600/30':'text-slate-400 hover:text-white'}`}>{l}</button>;
+  const st={pending:['قيد المراجعة ⏳','bg-yellow-500/20 text-yellow-400'],approved:['تم الشحن ✅','bg-emerald-500/20 text-emerald-400'],rejected:['مرفوض ❌','bg-rose-500/20 text-rose-400']};
+  if(!configured)return <NoCfg/>;
+  const loading=user===undefined||(user&&profile===undefined);
+  const logged=!!user&&!!profile;
+  return <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-red-600 selection:text-white relative overflow-x-hidden">
+    <Splash/>
+    <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-red-600/20 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
+    <div className="fixed bottom-0 right-10 w-[450px] h-[450px] bg-rose-700/15 rounded-full blur-[160px] pointer-events-none"></div>
+    <header className="sticky top-0 z-40 backdrop-blur-2xl bg-slate-950/40 border-b border-red-500/20 shadow-lg shadow-red-950/20"><div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between gap-2">
+      <div onClick={()=>setTab('home')} className="flex items-center gap-3 cursor-pointer group">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 p-0.5 shadow-lg shadow-red-600/40 group-hover:scale-105 transition-transform"><div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-2xl animate-bounce">🔥</div></div>
+        <div><h1 className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-red-500 via-rose-400 to-white bg-clip-text text-transparent">MORA STORE</h1><p className="text-[10px] text-red-400/80 font-medium tracking-widest">شحن الألعاب المباشر</p></div></div>
+      {logged&&<nav className="hidden md:flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-full border border-red-500/20">{nb('home','الرئيسية')}{nb('orders',`طلباتي (${mine.length})`)}</nav>}
+      {logged&&<div className="flex items-center gap-2 bg-red-950/40 border border-red-500/30 px-3 py-2 rounded-2xl"><span className="text-xs font-bold text-red-200 font-mono">📱 {profile.phone}</span><button className="text-[10px] text-slate-400 underline" onClick={()=>(!user.isAnonymous||confirm('لو خرجت هتفقد طلباتك على الجهاز ده. متأكد؟'))&&auth.signOut()}>خروج</button></div>}
+    </div></header>
+    <main className="max-w-6xl mx-auto px-4 py-8 relative space-y-10">
+      {loading&&<p className="text-center text-slate-500 py-16">جاري التحميل...</p>}
+      {!loading&&!logged&&<PhoneGate user={user}/>}
+      {logged&&<div className="md:hidden flex justify-center gap-2 bg-slate-900/60 p-1.5 rounded-full border border-red-500/20 w-fit mx-auto">{nb('home','الرئيسية')}{nb('orders',`طلباتي (${mine.length})`)}</div>}
+      {logged&&tab==='home'&&<><Hero/><Store uid={user.uid} phone={profile.phone} catalog={catalog} wallets={wallets} onDone={()=>setTab('orders')}/></>}
+      {logged&&tab==='orders'&&<div className="space-y-6 max-w-4xl mx-auto"><h3 className="text-2xl font-bold text-white">🕘 سجل العمليات والطلبات</h3>
+        {mine.length===0?<div className="bg-slate-900/30 border border-white/10 rounded-3xl p-12 text-center text-slate-500"><div className="text-5xl mb-3">🛍️</div><p>لا توجد طلبات سابقة حتى الآن.</p></div>
+        :mine.map(o=><div key={o.id} className="bg-slate-900/50 backdrop-blur-2xl border border-red-500/20 p-6 rounded-3xl flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div className="space-y-1"><div className="flex items-center gap-2"><span className="font-mono text-xs font-bold text-red-400">{o.id}</span><span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${(st[o.status]||st.pending)[1]}`}>{(st[o.status]||st.pending)[0]}</span></div>
+            <h4 className="font-bold text-white text-lg">{o.game} - {o.pkg}</h4><p className="text-xs text-slate-400">ID الحساب: <span className="font-mono text-slate-200">{o.pid}</span></p></div>
+          <div><div className="text-xl font-black text-red-400">{o.price} ج.م</div><div className="text-[10px] text-slate-500">{new Date(o.ts).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div></div></div>)}</div>}
+    </main>
+    {logged&&<a href="https://wa.me/201017576934" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 left-6 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl shadow-emerald-600/40 flex items-center gap-2 transition-all hover:scale-110">💬<span className="hidden md:inline font-bold text-xs">الدعم الفني عبر واتساب</span></a>}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>
